@@ -1,0 +1,60 @@
+---
+title: "LAB1 bg"
+author: "Sirui Xu"
+date: "15/01/2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+# q2
+
+```{r}
+icd10cm_codes=read.delim("/Users/SiruiXu/Desktop/icd10cm_codes_2020.txt",header=F,sep = "\t")
+#set new columns
+icd_code_new <- icd10cm_codes %>%separate(col = V1, into = c("ICD10", "description"), sep = 7)
+head(icd_code_new)
+```
+
+```{r}
+# From the created data frame find a number of different diagnoses for the first chapter “Certain infectious and parasitic diseases” with codes start at “A00” and end at “B99”.
+fc = icd_code_new[grepl("^(A00)", icd_code_new$ICD10) | grepl("^(B99)", icd_code_new$ICD10), ]
+
+fc_new = icd_code_new[grepl("^(A)", icd_code_new$ICD10) | grepl("^(B)", icd_code_new$ICD10), ]
+head(fc_new)
+```
+
+
+# q3
+
+```{r}
+q3 <- read.csv("/Users/SiruiXu/Desktop/DE1_0_2008_to_2010_inpatient_claims_Sample_1.csv",header=T)
+```
+
+```{r}
+#Select only first admission for each patient
+admission <- q3 %>%group_by(DESYNPUF_ID) %>%summarise(first_admission_date = min(CLM_ADMSN_DT))
+head(admission)
+```
+
+```{r}
+q3.2 <- read.csv("/Users/SiruiXu/Desktop/DE1_0_2008_Beneficiary_Summary_File_Sample_1.csv",header=T)
+combine <- merge(q3, q3.2, by.x = "DESYNPUF_ID",by.y = "DESYNPUF_ID")
+q3.3=c('30400', '30401', '30402', '30403', '30470', '30471', '30472', '30473', '30550', '30551', '30552', '30553', '96500', '96501','96502','96509','9701','E8500','E8501','E8502', 'E9350','E9351','E9352','E9401')
+combine$opiod=ifelse( combine$ICD9_DGNS_CD_1 %in% q3.3|combine$ICD9_DGNS_CD_2 %in% q3.3|combine$ICD9_DGNS_CD_3 %in% q3.3|combine$ICD9_DGNS_CD_4 %in% q3.3|combine$ICD9_DGNS_CD_5 %in% q3.3|combine$ICD9_DGNS_CD_6 %in% q3.3|combine$ICD9_DGNS_CD_7 %in% q3.3|combine$ICD9_DGNS_CD_8 %in% q3.3|combine$ICD9_DGNS_CD_9 %in% q3.3 |combine$ICD9_DGNS_CD_10 %in% q3.3,1,0)
+
+table(combine$BENE_RACE_CD)
+
+table(combine$opiod)
+
+newnew=combine %>%group_by(DESYNPUF_ID) %>%summarise(opiod_new = max(opiod),Race=max(BENE_RACE_CD)) 
+
+Q3_new=newnew[newnew$opiod_new==1,] %>% group_by(Race) %>%summarize(n = n()) %>% mutate(prop = round(n/sum(n), 2))  
+
+Q3_new
+```
+
+My comment: 475 individuals (84%) in category 1, 62 people (11%) in category 2, 17 people (3%) in category 3, and 9 people (2%) in category 5 were among the patients with opiod use disorder.
